@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: csv-configmap
+data:
+  gencsv.sh: |
+    #!/bin/bash
+    touch /tmp/inputdata
+    #erasing all the pre-existing content 
+    > inputdata
+    #check if args are empty or less than 1 
+    if [ "$1" = "" ] || [ $# -lt 1 ]; then
+    for i in $(seq 0 10)
+    do
+    echo "$i," "$(( ( RANDOM % 1000 )  + 1 ))" >> /tmp/inputdata
+    done
+    else 
+    for i in $(seq 0 $1)
+    do
+    echo "$i," "$(( ( RANDOM % 1000 )  + 1 ))" >> /tmp/inputdata
+    done
+    fi 
+
+    

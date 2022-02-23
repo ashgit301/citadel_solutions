@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csv-server
+  labels:
+    app: csv-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csv-server
+  template:
+    metadata:
+      labels:
+        app: csv-server
+    spec:
+      initContainers:
+      - name: writable-dir
+        image: busybox
+        command: ["/bin/sh","-c"]
+        args: ["sh /tmp/gencsv.sh"]
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: csv-server-vol
+          mountPath: /tmp/gencsv.sh
+          subPath: gencsv.sh
+      containers:
+      - name: csv-server
+        image: infracloudio/csvserver:latest
+        env:
+        - name: CSVSERVER_BORDER
+          value: "orange"
+        ports:
+        - containerPort: 9300
+        volumeMounts:
+        - mountPath: /csvserver/inputdata
+          name: tmp
+          subPath: inputdata 
+      volumes: 
+        - name: csv-server-vol
+          configMap: 
+            name: csv-configmap
+        - name: tmp
+          emptyDir: {}
