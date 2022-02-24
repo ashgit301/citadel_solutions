@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: StatfulSet
+kind: StatefulSet
 metadata:
   name: prometheus
 spec:
   selector:
     matchLabels:
       app: prometheus
+  serviceName: prometheus
   replicas: 1
   template:
     metadata:
@@ -21,18 +22,17 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /etc/prometheus
-        - name: promethues-metrics
-          mountPath: /metrics
+        - name: prometheus-metrics
+          mountPath: /prometheus/
       volumes:
       - name: config-volume
         configMap:
          name: prometheus-config
-      volumeClaimTemplates:
-      - metadata:
-          name: prometheus-metrics
+  volumeClaimTemplates:
+    - metadata:
+        name: prometheus-metrics
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: ["ReadWriteMany"]
         resources:
           requests:
             storage: 1Gi
-        storageClassName: ""
