@@ -1,5 +1,4 @@
 provider "aws" {
-  profile = "default"
   region  = "us-east-1"
 }
 
@@ -7,9 +6,9 @@ resource "aws_instance" "wordpress_server" {
   ami           = var.ami_id
   count 	= 2 
   instance_type = var.instance_type
-  security_groups = [aws_security_group.wordpress_sg.id]
+  security_groups = [aws_security_group.wordpress_sg.name]
   user_data = file("user_data.sh")
-  key_name = "citadel"
+  key_name = "citadel-terraform"
   tags = { 
     Name = "wordpress_server_${count.index}"
   }
@@ -37,6 +36,13 @@ resource "aws_security_group" "wordpress_sg" {
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -68,7 +74,7 @@ resource "aws_security_group" "elb_sg" {
 resource "aws_elb" "wordpress_elb" {
   name = "wordpress-elb"
   security_groups = [aws_security_group.elb_sg.id]
-  availability_zones = ["us-east-1"]
+  availability_zones = ["us-east-1a"]
   health_check {
     healthy_threshold = 2
     unhealthy_threshold = 2
@@ -84,7 +90,7 @@ resource "aws_elb" "wordpress_elb" {
     instance_protocol = "http"
   }
 
-  instances = [aws_instance.wordpress_server[1].id,aws_instance.wordpress_server[2].id]
+  instances = [aws_instance.wordpress_server[0].id,aws_instance.wordpress_server[1].id]
   cross_zone_load_balancing = false
   idle_timeout = 400
   connection_draining = true
@@ -102,10 +108,10 @@ resource "aws_db_instance" "wordpress_backend" {
   instance_class       = "db.t3.micro"
   db_name              = "wordpress_backend"
   username             = "wordpress"
-  password             = "citadel"
+  password             = "citadelpwd"
   parameter_group_name = "default.mysql5.7"
   skip_final_snapshot  = true
-  availability_zone     = "us-east-1"
+  availability_zone    = "us-east-1a"
 }
 
 output "wordpress_ip_addr" {
