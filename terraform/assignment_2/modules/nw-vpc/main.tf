@@ -1,35 +1,35 @@
-resource “aws_vpc” “citadel-vpc” {
-    cidr_block = “10.0.0.0/16”
-    enable_dns_support = “true” 
-    enable_dns_hostnames = “true”
-    tags {
-        Name = “citadel-vpc”
-    }
+resource "aws_vpc" "citadel-vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true 
+  enable_dns_hostnames = true
+  tags = {
+    Name = "citadel-vpc"
+  }
 }
 
-resource “aws_subnet” “subnet-public” {
+resource "aws_subnet" "subnet-public" {
     count = 3 
     vpc_id = aws_vpc.citadel-vpc.id
     cidr_block = var.public_subnet[count.index]
-    map_public_ip_on_launch = “true”
-    tags {
-        Name = “subnet-public-${count.index}”
+    map_public_ip_on_launch = true
+    tags = {
+      Name = "subnet-public-${count.index}"
     }
 }
 
-resource “aws_subnet” “subnet-private” {
+resource "aws_subnet" "subnet-private" {
     count = 3 
     vpc_id = aws_vpc.citadel-vpc.id
     cidr_block = var.private_subnet[count.index]
     map_public_ip_on_launch = false
-    tags {
-        Name = “subnet-private-${count.index}”
+    tags = {
+        Name = "subnet-private-${count.index}"
     }
 }
 
 resource "aws_internet_gateway" "citadel-igw" {
-    vpc_id = "${aws_vpc.citadel-vpc.id}"
-    tags {
+    vpc_id = aws_vpc.citadel-vpc.id
+    tags = {
         Name = "citadel-igw"
     }
 }
@@ -39,7 +39,7 @@ resource "aws_eip" "nat_eip" {
   depends_on = [aws_internet_gateway.citadel-igw]
 }
 
-resource "aws_nat_gateway" "example" {
+resource "aws_nat_gateway" "citadel-nat" {
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = element(aws_subnet.subnet-private.*.id, 0)
 
@@ -47,26 +47,26 @@ resource "aws_nat_gateway" "example" {
     Name = "citadel-NAT"
   }
 
-  depends_on = [aws_internet_gateway.example]
+  depends_on = [aws_internet_gateway.citadel-igw]
 }
 
 resource "aws_route_table" "citadel-public-crt" {
-    vpc_id = "${aws_vpc.main-vpc.id}"
+    vpc_id = "${aws_vpc.citadel-vpc.id}"
     route {
         cidr_block = "0.0.0.0/0" 
-        gateway_id = "${aws_internet_gateway.citadel-igw.id}" 
+        gateway_id = "aws_internet_gateway.citadel-igw.id" 
     }
     
-    tags {
+    tags = {
         Name = "citadel-public-crt"
     }
 }
 
 resource "aws_route_table" "citadel-private-crt" {
-  vpc_id = aws_vpc.vpc.id
+  vpc_id = aws_vpc.citadel-vpc.id
   route {
       cidr_block = "0.0.0.0/0"
-      nat_gateway_id         = aws_nat_gateway.nat.id
+      nat_gateway_id         = aws_nat_gateway.citadel-nat.id
   }
 
   tags = {
@@ -77,14 +77,14 @@ resource "aws_route_table" "citadel-private-crt" {
 
 resource "aws_route_table_association" "crta-public-subnet"{
     count = 3
-    subnet_id = element(aws_subnet.subnet-public.*.id)
-    route_table_id = "${aws_route_table.citadel-public-crt.id}"
+    subnet_id = element(aws_subnet.subnet-public.*.id, count.index)
+    route_table_id = "aws_route_table.citadel-public-crt.id"
 }
 
 resource "aws_route_table_association" "crta-private-subnet"{
     count = 3 
-    subnet_id = element(aws_subnet.subnet-private.*.id
-    route_table_id = "${aws_route_table.citadel-private-crt.id}"
+    subnet_id = element(aws_subnet.subnet-private.*.id, count.index)
+    route_table_id = "aws_route_table.citadel-private-crt.id"
 }
 
 
