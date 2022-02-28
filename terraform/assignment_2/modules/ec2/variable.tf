@@ -10,3 +10,5 @@ variable "instance_type" {
   description = "The instance type of the the particular machine image" 
 }
 
+variable "subnet_id" {}
+variable "vpc_security_group" {}

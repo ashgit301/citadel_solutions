@@ -1,8 +1,9 @@
-resource "aws_db_instance" "test_db" {
-  instance_class         = "db.t2.micro"
-  allocated_storage      = 1
+resource "aws_db_instance" "testdb" {
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 5
   engine                 = "postgres"
-  name                   = postgres_rds
+  db_name                = "citadelpostgres"
   username               = "citadel"
   password               = "citadel1234"
+  skip_final_snapshot  = true
 }

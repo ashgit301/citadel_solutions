@@ -12,6 +12,7 @@ resource "aws_subnet" "subnet-public" {
     vpc_id = aws_vpc.citadel-vpc.id
     cidr_block = var.public_subnet[count.index]
     map_public_ip_on_launch = true
+    availability_zone = element(var.availability_zone, count.index)
     tags = {
       Name = "subnet-public-${count.index}"
     }
@@ -22,6 +23,7 @@ resource "aws_subnet" "subnet-private" {
     vpc_id = aws_vpc.citadel-vpc.id
     cidr_block = var.private_subnet[count.index]
     map_public_ip_on_launch = false
+    availability_zone = element(var.availability_zone, count.index)
     tags = {
         Name = "subnet-private-${count.index}"
     }
@@ -51,10 +53,10 @@ resource "aws_nat_gateway" "citadel-nat" {
 }
 
 resource "aws_route_table" "citadel-public-crt" {
-    vpc_id = "${aws_vpc.citadel-vpc.id}"
+    vpc_id = aws_vpc.citadel-vpc.id
     route {
         cidr_block = "0.0.0.0/0" 
-        gateway_id = "aws_internet_gateway.citadel-igw.id" 
+        gateway_id = aws_internet_gateway.citadel-igw.id 
     }
     
     tags = {
@@ -78,13 +80,13 @@ resource "aws_route_table" "citadel-private-crt" {
 resource "aws_route_table_association" "crta-public-subnet"{
     count = 3
     subnet_id = element(aws_subnet.subnet-public.*.id, count.index)
-    route_table_id = "aws_route_table.citadel-public-crt.id"
+    route_table_id = aws_route_table.citadel-public-crt.id
 }
 
 resource "aws_route_table_association" "crta-private-subnet"{
     count = 3 
     subnet_id = element(aws_subnet.subnet-private.*.id, count.index)
-    route_table_id = "aws_route_table.citadel-private-crt.id"
+    route_table_id = aws_route_table.citadel-private-crt.id
 }
 
 
